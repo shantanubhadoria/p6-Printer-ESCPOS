@@ -19,9 +19,9 @@
 		"Test"
 	],
 	"provides" : {
-		"Printer::ESCPOS" : "lib/Printer/ESCPOS.pm",
-		"Printer::ESCPOS::Network" : "lib/Printer/ESCPOS/Network.pm",
-		"Printer::ESCPOS::Network::Async" : "lib/Printer/ESCPOS/Network/Async.pm"
+		"Printer::ESCPOS" : "lib/Printer/ESCPOS.pm6",
+		"Printer::ESCPOS::Network" : "lib/Printer/ESCPOS/Network.pm6",
+		"Printer::ESCPOS::Network::Async" : "lib/Printer/ESCPOS/Network/Async.pm6"
 	},
 	"tags" : [
 	  "Printer",
