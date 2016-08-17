@@ -238,25 +238,23 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   }
 
 
+  enum AlignmentEnum(<left right center full>);
   subset Alignment of Str where {
-    lc $_ ∈ <left right center full> or warn 'Alignment must be "left", "right", "center" or "full"';
+    lc $_ ∈ AlignmentEnum or warn 'Alignment must be "left", "right", "center" or "full"';
   };
   method align(Alignment $alignment) {
-
-    my %alignmentMap = left   => 0,
-                       center => 1,
-                       right  => 2,
-                       full   => 3;
-    self.send( ESC ~ 'a' ~ %alignmentMap{lc $alignment} );
+    self.send( ESC ~ 'a' ~ AlignmentEnum.enums{lc $alignment} );
   }
 
+  enum BarcodeTextPositionEnum(<none above below aboveandbelow>);
   subset BarcodeTextPosition of Str where {
-    $_ ∈ <none above below aboveandbelow>
-      or warn 'Barcode TextPosition must be "none", "above", "below" or "aboveandbelow"';
+    lc $_ ∈ BarcodeTextPositionEnum
+      or warn 'Barcode TextPosition must be one of ' ~ BarcodeTextPositionEnum.enums.keys.map({““$_””}).join(', ');
   };
+  enum BarcodeSystemEnum(<UPC-A UPC-E JAN13 JAN8 CODE39 ITF CODABAR CODE93 CODE128>);
   subset BarcodeSystem of Str where {
-    $_ ∈ <UPC-A UPC-E JAN13 JAN8 CODE39 ITF CODABAR CODE93 CODE128>
-      or warn 'Barcode System must be "UPC-A", "UPC-E", "JAN13", "JAN8", "CODE39", "ITF", "CODABAR", "CODE93" or "CODE128"';
+    uc $_ ∈ BarcodeSystemEnum
+      or warn 'Barcode System must be one of ' ~ BarcodeSystemEnum.enums.keys.map({““$_””}).join(', ');
   };
   method barcode(
     Str $text,
@@ -265,28 +263,11 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
     Byte :$height = 50,
     Byte :$width = 2,
     BarcodeSystem :$system = 'CODE93') {
-
-
-      my %barcodeSystemMap = UPC-A   => 0,
-                             UPC-B   => 1,
-                             JAN13   => 2,
-                             JAN8    => 3,
-                             CODE39  => 4,
-                             ITF     => 5,
-                             CODABAR => 6,
-                             CODE93  => 7,
-                             CODE128 => 8;
-
-      my %barcodeTextPositionMap = none          => 0,
-                                   above         => 1,
-                                   below         => 2,
-                                   aboveandbelow => 3;
-
-      self.send( GS ~ 'H' ~ chr(%barcodeTextPositionMap{$textPosition}) );
+      self.send( GS ~ 'H' ~ chr(BarcodeTextPositionEnum.enums{lc $textPosition}) );
       self.send( GS ~ 'f' ~ chr($font) );
       self.send( GS ~ 'h' ~ chr($height) );
       self.send( GS ~ 'w' ~ chr($width) );
-      self.send( GS ~ 'k' ~ chr(%barcodeSystemMap{$system} + 65) );
+      self.send( GS ~ 'k' ~ chr(BarcodeSystemEnum.enums{uc $system} + 65) );
       self.send( chr($text.chars) ~ $text);
   }
 
@@ -295,7 +276,7 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   }
 
   method bold(Bool $bold) {
-    self.send( ESC ~ 'E' ~ $bold.value ); # Get value for Bool as we need to pass a 1 or 0
+    self.send( ESC ~ 'E' ~ $bold.Numeric ); # Get value for Bool as we need to pass a 1 or 0
   }
 
   method cancel() {
@@ -320,14 +301,12 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   method cut-paper(Bool :$partialCut = False, Bool :$feed = True) {
     self.lf;
 
-    my Int $value = $partialCut.value + 65 × $feed.value;
-    say $feed;
-    say $value;
+    my Int $value = $partialCut.Numeric + 65 × $feed.Numeric;
     self.send( GS ~ 'V' ~ chr(66) ~ chr(1) );
   }
 
   method double-strike(Bool $doubleStrike) {
-    self.send( ESC ~ 'G' ~ $doubleStrike.value ); # Get value for Bool as we need to pass a 1 or 0
+    self.send( ESC ~ 'G' ~ $doubleStrike.Numeric ); # Get value for Bool as we need to pass a 1 or 0
   }
 
   method drawer-kick-pulse(Int :$pin where * ∈ (0, 1) = 0, Int :$time where [1..8] = 8) {
@@ -335,7 +314,7 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   }
 
   method enable(Bool $enable) {
-    self.send( ESC ~ '=' ~ chr($enable.value) ); # Get value for Bool as we need to pass a 1 or 0
+    self.send( ESC ~ '=' ~ chr($enable.Numeric) ); # Get value for Bool as we need to pass a 1 or 0
   }
 
   method ff() {
@@ -356,7 +335,7 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   }
 
   method invert(Bool $invert) {
-    self.send( GS ~ 'B' ~ chr($invert.value) ); # Get value for Bool as we need to pass a 1 or 0 ASCII
+    self.send( GS ~ 'B' ~ chr($invert.Numeric) ); # Get value for Bool as we need to pass a 1 or 0 ASCII
   }
 
   method left-margin(TwoByte $leftMargin) {
@@ -369,12 +348,12 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   }
 
   subset LineSpacingCommandSet of Str where {
-    $_ ∈ <+ 3 A> or warn 'LineSpacing CommandSet must be "+", "3" or "A"';
+    $_ ∈ ('+', '3', 'A') or warn 'LineSpacing CommandSet must be "+", "3" or "A"';
   }
-  method line-spacing(Byte $lineSpacing, LineSpacingCommandSet $commandSet = '3' ) {
-    if $commandSet eq 'A' and $lineSpacing > 85 {
-      X::Adhoc.new(message => 'Line Spacing must be less than 85 when command set is "A".').throw;
-    }
+  method line-spacing(
+    Byte $lineSpacing,
+    LineSpacingCommandSet $commandSet where ($commandSet ne 'A' or $lineSpacing <= 85) = '3'
+    ) {
     self.send( ESC ~ $commandSet ~ chr($lineSpacing) );
   }
 
@@ -384,17 +363,16 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   }
 
   method rot90(Bool $rot90) {
-    self.send( ESC ~ 'V' ~ chr($rot90.value) );
+    self.send( ESC ~ 'V' ~ chr($rot90.Numeric) );
   }
 
   method tab() {
     self.send( "\t" );
   }
 
-  method tab-positions(*@tabPositions) {
+  method tab-positions(*@tabPositions where {$_.any ~~ Int and $_.any > 0}) {
     my $string = ESC ~ 'D';
     for @tabPositions.sort -> $tabPosition {
-      X::Adhoc.new(message => 'Tab Positions must be Int').throw unless ($tabPosition.^name eq 'Int');
       $string ~= chr($tabPosition);
     }
     self.send($string);
@@ -413,7 +391,7 @@ class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
   }
 
   method upside-down(Bool $upsideDown) {
-    self.send( ESC ~ '{' ~ $upsideDown.value );  # Get value for Bool as we need to pass a 1 or 0
+    self.send( ESC ~ '{' ~ $upsideDown.Numeric );  # Get value for Bool as we need to pass a 1 or 0
   }
 
   method !split-bytes(Int $value is copy, Int $minBytes = 0) {
