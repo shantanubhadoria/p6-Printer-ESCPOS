@@ -32,6 +32,11 @@ class Printer::ESCPOS {
   constant DC4 = "\x14";
 
 
+  class X::Adhoc is Exception {
+    has Str $.message;
+  }
+
+
   subset Alignment of Str where {
     lc $_ ∈ <left right center full> or warn 'Alignment must be "left", "right", "center" or "full"';
   };
@@ -141,7 +146,8 @@ class Printer::ESCPOS {
   }
 
   method horizontalPosition(TwoByte $horizontalPosition where * < 4096 = 0) {
-
+    my ($nH, $nL) = self!splitBytes($horizontalPosition, 2);
+    self.print( ESC ~ '$' ~ chr($nL) ~ chr($nH) );
   }
 
   method init() {
@@ -166,9 +172,14 @@ class Printer::ESCPOS {
   }
   method lineSpacing(Byte $lineSpacing, LineSpacingCommandSet $commandSet = '3' ) {
     if $commandSet eq 'A' and $lineSpacing > 85 {
-      X::Adhoc.new('Line Spacing must be less than 85 when command set is "A".');
+      X::Adhoc.new(message => 'Line Spacing must be less than 85 when command set is "A".').throw;
     }
     self.print( ESC ~ $commandSet ~ chr($lineSpacing) );
+  }
+
+  method printAreaWidth(TwoByte $width) {
+    my ($nH, $nL) = self!splitBytes($width, 2);
+    self.print( GS ~ 'W' ~ $nL ~ $nH );
   }
 
   method rot90(Bool $rot90) {
@@ -177,6 +188,15 @@ class Printer::ESCPOS {
 
   method tab() {
     self.print( "\t" );
+  }
+
+  method tabPositions(*@tabPositions) {
+    my $string = ESC ~ 'D';
+    for @tabPositions.sort -> $tabPosition {
+      X::Adhoc.new(message => 'Tab Positions must be Int').throw unless ($tabPosition.^name eq 'Int');
+      $string ~= chr($tabPosition);
+    }
+    self.print($string);
   }
 
   method textSize(HalfByte :$height!, HalfByte :$width!) {
