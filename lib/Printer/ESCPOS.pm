@@ -201,7 +201,7 @@ the same terms as the Perl 6 programming language system itself.
 
 =end pod
 
-class Printer::ESCPOS {
+class Printer::ESCPOS:auth<github:shantanubhadoria>:ver<1.0.0> {
 
   subset Byte of Int where {
     0 <= $_ and $_ <= 255 or warn 'Byte must be a Int between 0 and 255';
