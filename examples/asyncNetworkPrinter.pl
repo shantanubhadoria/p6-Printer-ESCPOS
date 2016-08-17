@@ -1,48 +1,24 @@
 use v6;
 
 use lib 'lib';;
-use Printer::ESCPOS::Network;
+use Printer::ESCPOS::Network::Async;
 
-await Printer::ESCPOS::Network.connect('10.0.13.108', 9100).then( -> $p {
+await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
   if $p.status {
     given $p.result {
       .init;
-      #.textSize(height => 3, width => 2);
-      #.barcode("TEST", system => 'CODE93');
-      #.lf;
-      .tabPositions(3,1,2);
-      #.print('hmargin 1');
-      #.lf;
-      #.print('margin 2');
-      #.lf;
+      .text-size(height => 3, width => 2);
+      .barcode("TEST", system => 'CODE93');
+      .lf;
+      .tab-positions(3,1,2);
+      .send('hmargin 1');
+      .lf;
+      .send('margin 2');
+      .lf;
 
-      #.cutPaper;
-      #.lf;
+      .cut-paper;
+      .lf;
       .close;
     }
   }
 });
-
-=begin pod
-
-=head2 ss
-
-await IO::Socket::Async.connect('10.0.13.108', 9100).then( -> $p {
-  if $p.status {
-    given $p.result {
-      .print("Hello, Perl 6\n\n\n\n\n\n");
-      react {
-        whenever .Supply() -> $v {
-          $v.say;
-          done;
-        }
-      }
-      .close;
-    }
-  }
-});
-
-=cut
-
-
-=end pod
