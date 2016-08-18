@@ -213,7 +213,6 @@ await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
 Initializes the Printer. Clears the data in print buffer and resets the printer to the mode that was in effect when the
 power was turned on. This function is automatically called on creation of printer object.
 
-
 =head1 SUPPORT
 
 =head2 Bugs / Feature Requests
