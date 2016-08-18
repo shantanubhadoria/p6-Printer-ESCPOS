@@ -84,16 +84,16 @@ printers in just 4 lines of code.
 
 =begin code
 
-    use v6;
-    use Printer::ESCPOS;
+use v6;
+use Printer::ESCPOS;
 
-    class Printer::ESCPOS::Network is IO::Socket::INET is Printer::ESCPOS {
-      method send(Str $string) { # Send is the subroutine called by Printer::ESCPOS to send data to the Printer
-                                 # Since IO::Socket::INET uses print() method to send data to the peer. We route data
-                                 # Sent on send() to IO::Socket::INET's print() method.
-        self.print($string);
-      }
-    }
+class Printer::ESCPOS::Network is IO::Socket::INET is Printer::ESCPOS {
+  method send(Str $string) { # Send is the subroutine called by Printer::ESCPOS to send data to the Printer
+                             # Since IO::Socket::INET uses print() method to send data to the peer. We route data
+                             # Sent on send() to IO::Socket::INET's print() method.
+    self.print($string);
+  }
+}
 
 =end code
 
@@ -101,22 +101,22 @@ Now you can use Printer::ESCPOS::Network class to talk to any network printer:
 
 =begin code
 
-    use Printer::ESCPOS::Network;
+use Printer::ESCPOS::Network;
 
-    my $printer = Printer::ESCPOS::Network.new(:host<10.0.13.108>, :port(9100));
-    $printer.init;
-    $printer.barcode("TEST", system => 'CODE93');
-    $printer.lf;
-    $printer.tab-positions(3,1,2);
-    $printer.tab;
-    $printer.send('hmargin 1');
-    $printer.lf;
-    $printer.send('margin 2');
-    $printer.lf;
+my $printer = Printer::ESCPOS::Network.new(:host<10.0.13.108>, :port(9100));
+$printer.init;
+$printer.barcode("TEST", system => 'CODE93');
+$printer.lf;
+$printer.tab-positions(3,1,2);
+$printer.tab;
+$printer.send('hmargin 1');
+$printer.lf;
+$printer.send('margin 2');
+$printer.lf;
 
-    $printer.cut-paper;
-    $printer.lf;
-    $printer.close;
+$printer.cut-paper;
+$printer.lf;
+$printer.close;
 
 =end code
 
@@ -124,6 +124,49 @@ Now you can use Printer::ESCPOS::Network class to talk to any network printer:
 
 IO::Socket::Async allows asynchronous communication with a TCP device. Watch how we can use this module to talk to
 ESCPOS printers in just 4 lines of code.
+
+=begin code
+
+use v6;
+use Printer::ESCPOS;
+
+class Printer::ESCPOS::Network::Async is IO::Socket::Async is Printer::ESCPOS {
+  method send(Str $string) {
+    self.print($string);
+  }
+}
+
+
+=end code
+
+Now you can use Printer::ESCPOS::Network::Async class to talk to any network printer:
+
+=begin code
+
+use Printer::ESCPOS::Network::Async;
+
+await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
+  if $p.status {
+    given $p.result {
+      .init;
+      .text-size(height => 3, width => 2);
+      .barcode("TEST", system => 'CODE93');
+      .lf;
+      .tab-positions(3,1,2);
+      .send('hmargin 1');
+      .lf;
+      .send('margin 2');
+      .lf;
+
+      .cut-paper;
+      .lf;
+      .close;
+    }
+  }
+});
+
+
+=end code
 
 =head1 ATTRIBUTES
 
@@ -133,33 +176,33 @@ supported. USB, Serial and Bluetooth support will be added as Modules for the sa
 
 =begin code
 
-    use Printer::ESCPOS;
+use Printer::ESCPOS;
 
-    class Printer::ESCPOS::Network::Async is IO::Socket::Async is Printer::ESCPOS {
-      method send(Str $string) {
-        self.print($string);
-      }
-    }
+class Printer::ESCPOS::Network::Async is IO::Socket::Async is Printer::ESCPOS {
+  method send(Str $string) {
+    self.print($string);
+  }
+}
 
 =end code
 
 =begin code
 
-    use Printer::ESCPOS::Network::Async;
+use Printer::ESCPOS::Network::Async;
 
-    await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
-      if $p.status {
-        given $p.result {
-          .init;
-          .barcode("TEST", system => 'CODE93');
-          .lf;
-          .send('hmargin 1');
-          .lf;
-          .cut-paper;
-          .close;
-        }
-      }
-    });
+await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
+  if $p.status {
+    given $p.result {
+      .init;
+      .barcode("TEST", system => 'CODE93');
+      .lf;
+      .send('hmargin 1');
+      .lf;
+      .cut-paper;
+      .close;
+    }
+  }
+});
 
 =end code
 

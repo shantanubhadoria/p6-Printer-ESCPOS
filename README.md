@@ -67,69 +67,102 @@ Extending IO::Socket::INET in just 4 lines of code:
 
 IO::Socket::INET allows synchronous communication with a TCP device. Watch how we can use this module to talk to ESCPOS printers in just 4 lines of code.
 
-        use v6;
-        use Printer::ESCPOS;
+    use v6;
+    use Printer::ESCPOS;
 
-        class Printer::ESCPOS::Network is IO::Socket::INET is Printer::ESCPOS {
-          method send(Str $string) { # Send is the subroutine called by Printer::ESCPOS to send data to the Printer
-                                     # Since IO::Socket::INET uses print() method to send data to the peer. We route data
-                                     # Sent on send() to IO::Socket::INET's print() method.
-            self.print($string);
-          }
-        }
+    class Printer::ESCPOS::Network is IO::Socket::INET is Printer::ESCPOS {
+      method send(Str $string) { # Send is the subroutine called by Printer::ESCPOS to send data to the Printer
+                                 # Since IO::Socket::INET uses print() method to send data to the peer. We route data
+                                 # Sent on send() to IO::Socket::INET's print() method.
+        self.print($string);
+      }
+    }
 
 Now you can use Printer::ESCPOS::Network class to talk to any network printer:
 
-        use Printer::ESCPOS::Network;
+    use Printer::ESCPOS::Network;
 
-        my $printer = Printer::ESCPOS::Network.new(:host<10.0.13.108>, :port(9100));
-        $printer.init;
-        $printer.barcode("TEST", system => 'CODE93');
-        $printer.lf;
-        $printer.tab-positions(3,1,2);
-        $printer.tab;
-        $printer.send('hmargin 1');
-        $printer.lf;
-        $printer.send('margin 2');
-        $printer.lf;
+    my $printer = Printer::ESCPOS::Network.new(:host<10.0.13.108>, :port(9100));
+    $printer.init;
+    $printer.barcode("TEST", system => 'CODE93');
+    $printer.lf;
+    $printer.tab-positions(3,1,2);
+    $printer.tab;
+    $printer.send('hmargin 1');
+    $printer.lf;
+    $printer.send('margin 2');
+    $printer.lf;
 
-        $printer.cut-paper;
-        $printer.lf;
-        $printer.close;
+    $printer.cut-paper;
+    $printer.lf;
+    $printer.close;
 
 Extending IO::Socket::Async in just 4 lines of code:
 ----------------------------------------------------
 
 IO::Socket::Async allows asynchronous communication with a TCP device. Watch how we can use this module to talk to ESCPOS printers in just 4 lines of code.
 
+    use v6;
+    use Printer::ESCPOS;
+
+    class Printer::ESCPOS::Network::Async is IO::Socket::Async is Printer::ESCPOS {
+      method send(Str $string) {
+        self.print($string);
+      }
+    }
+
+Now you can use Printer::ESCPOS::Network::Async class to talk to any network printer:
+
+    use Printer::ESCPOS::Network::Async;
+
+    await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
+      if $p.status {
+        given $p.result {
+          .init;
+          .text-size(height => 3, width => 2);
+          .barcode("TEST", system => 'CODE93');
+          .lf;
+          .tab-positions(3,1,2);
+          .send('hmargin 1');
+          .lf;
+          .send('margin 2');
+          .lf;
+
+          .cut-paper;
+          .lf;
+          .close;
+        }
+      }
+    });
+
 ATTRIBUTES
 ==========
 
 At the moment the attributes used are dependent on the communication protocol/port that you use. If your Printer is connected over a network you will need to provide a IP Address and port number. At the moment only network driver is supported. USB, Serial and Bluetooth support will be added as Modules for the same become available in Perl 6
 
-        use Printer::ESCPOS;
+    use Printer::ESCPOS;
 
-        class Printer::ESCPOS::Network::Async is IO::Socket::Async is Printer::ESCPOS {
-          method send(Str $string) {
-            self.print($string);
-          }
+    class Printer::ESCPOS::Network::Async is IO::Socket::Async is Printer::ESCPOS {
+      method send(Str $string) {
+        self.print($string);
+      }
+    }
+
+    use Printer::ESCPOS::Network::Async;
+
+    await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
+      if $p.status {
+        given $p.result {
+          .init;
+          .barcode("TEST", system => 'CODE93');
+          .lf;
+          .send('hmargin 1');
+          .lf;
+          .cut-paper;
+          .close;
         }
-
-        use Printer::ESCPOS::Network::Async;
-
-        await Printer::ESCPOS::Network::Async.connect('10.0.13.108', 9100).then( -> $p {
-          if $p.status {
-            given $p.result {
-              .init;
-              .barcode("TEST", system => 'CODE93');
-              .lf;
-              .send('hmargin 1');
-              .lf;
-              .cut-paper;
-              .close;
-            }
-          }
-        });
+      }
+    });
 
 METHODS
 =======
