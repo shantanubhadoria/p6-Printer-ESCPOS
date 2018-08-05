@@ -16,7 +16,8 @@
 	"build-depends" : [],
 	"depends" : [],
 	"test-depends" : [
-		"Test"
+		"Test",
+		"Test::META"
 	],
 	"provides" : {
 		"Printer::ESCPOS" : "lib/Printer/ESCPOS.pm6",
